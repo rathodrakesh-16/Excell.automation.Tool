@@ -2,10 +2,26 @@
 
 Sub ClearSheetExceptRow1()
     Dim ws As Worksheet
-    Set ws = ThisWorkbook.ActiveSheet ' Modify as needed to target a specific sheet
-    
-    ' Clear all content in columns A to F, except for row 1
-    ws.Range("A2:F" & ws.Rows.Count).ClearContents
+    Dim lastColumn As Long
+    Dim lastRow As Long
+
+    ' Set the active sheet (modify if needed for a specific sheet)
+    Set ws = ThisWorkbook.ActiveSheet
+
+    On Error Resume Next ' Handle potential errors gracefully
+
+    ' Find the last used column and row
+    lastColumn = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    ' Clear everything except row 1
+    If lastRow > 1 And lastColumn > 0 Then
+        ws.Range(ws.Cells(2, 1), ws.Cells(lastRow, lastColumn)).ClearContents
+    End If
+
+    MsgBox "All content has been cleared!", vbInformation
+
+    On Error GoTo 0 ' Reset error handling
 End Sub
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -14,17 +30,29 @@ End Sub
 
 Sub ClearSheetExceptRow1()
     Dim ws As Worksheet
-    Set ws = ThisWorkbook.ActiveSheet ' Modify as needed to target a specific sheet
-    
+    Dim lastRow As Long, lastCol As Long
     Dim rng As Range
-    Set rng = ws.Range("A2:D" & ws.Rows.Count)
-    
-    ' Clear contents
-    rng.ClearContents
-    
-    ' Clear cell fill color
-    rng.Interior.ColorIndex = xlNone
-    
-    ' Clear font color
-    rng.Font.ColorIndex = xlAutomatic
+
+    ' Set the active sheet (modify as needed for a specific sheet)
+    Set ws = ThisWorkbook.ActiveSheet
+
+    On Error Resume Next ' Handle potential errors gracefully
+
+    ' Find the last row and last column with data
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+
+    ' Define the range from row 2 downwards for all used columns
+    If lastRow > 1 And lastCol > 0 Then
+        Set rng = ws.Range(ws.Cells(2, 1), ws.Cells(lastRow, lastCol))
+        
+        ' Clear contents, fill color, and font color
+        rng.ClearContents
+        rng.Interior.ColorIndex = xlNone
+        rng.Font.ColorIndex = xlAutomatic
+    End If
+
+    MsgBox "Sheet cleared except for row 1!", vbInformation
+
+    On Error GoTo 0 ' Reset error handling
 End Sub
