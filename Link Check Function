@@ -1,0 +1,35 @@
+Sub CheckHttpLinks()
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim url As String
+    Dim status As String
+    
+    ' Set the worksheet
+    Set ws = ThisWorkbook.Sheets("Tools")
+    
+    ' Define the last row in column A
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    ' Loop through each cell in column A, starting from row 2
+    For i = 2 To lastRow
+        url = Trim(ws.Cells(i, 1).Value) ' Remove extra spaces
+        
+        ' Check if the cell is not empty
+        If url <> "" Then
+            ' Validate if it's a proper URL format
+            If Left(url, 7) = "http://" Then
+                status = "Found http"
+            ElseIf Left(url, 8) = "https://" Then
+                status = "Secure (https)"
+            Else
+                status = "Invalid URL"
+            End If
+        Else
+            status = "No URL"
+        End If
+        
+        ' Output the status in column C
+        ws.Cells(i, 3).Value = status
+    Next i
+End Sub
