@@ -5,18 +5,27 @@ Sub CountExtraSpaces()
     Dim originalLength As Long
     Dim trimmedLength As Long
     Dim outputRow As Long
-    
+    Dim inputColumn As String
+    Dim outputColumn As String
+
+    ' Performance optimization
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+
+    On Error GoTo ErrorHandler ' Start error handling
+
     ' Set the worksheet to "Tools"
     Set ws = ThisWorkbook.Sheets("Tools")
-    
-    ' Initialize the counter for extra spaces
-    extraSpaceCount = 0
-    
-    ' Start output in row 2 of column C (keeping row 1 empty)
+
+    ' Define input and output columns (dynamic setting)
+    inputColumn = "B" ' Column for input data
+    outputColumn = "C" ' Column for output data
+
+    ' Start output in row 2 of the output column (keeping row 1 empty)
     outputRow = 2
-    
-    ' Loop through each cell in column B
-    For Each cell In ws.Range("B2:B" & ws.Cells(ws.Rows.Count, "B").End(xlUp).Row)
+
+    ' Loop through each cell in the input column
+    For Each cell In ws.Range(inputColumn & "2:" & inputColumn & ws.Cells(ws.Rows.Count, inputColumn).End(xlUp).Row)
         If Not IsEmpty(cell.Value) Then
             ' Get the length of the cell's content
             originalLength = Len(cell.Value)
@@ -28,19 +37,29 @@ Sub CountExtraSpaces()
             ' If the cell is empty, set extra space count to 0
             extraSpaceCount = 0
         End If
-        
-        ' Output the extra space count to column C
-        ws.Cells(outputRow, 3).Value = extraSpaceCount
-        
+
+        ' Output the extra space count to the output column
+        ws.Cells(outputRow, outputColumn).Value = extraSpaceCount
+
         ' If extra spaces are found, fill the output cell with light red color
         If extraSpaceCount > 0 Then
-            ws.Cells(outputRow, 3).Interior.Color = RGB(255, 199, 206) ' Light red color
+            ws.Cells(outputRow, outputColumn).Interior.Color = RGB(255, 199, 206) ' Light red color
         Else
             ' Clear the color if no extra spaces
-            ws.Cells(outputRow, 3).Interior.ColorIndex = xlNone
+            ws.Cells(outputRow, outputColumn).Interior.ColorIndex = xlNone
         End If
-        
-        ' Move to the next row in column C
+
+        ' Move to the next row in the output column
         outputRow = outputRow + 1
     Next cell
+
+Cleanup:
+    ' Re-enable screen updates and calculations
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "An error occurred: " & Err.Description
+    Resume Cleanup
 End Sub
