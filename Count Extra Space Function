@@ -1,0 +1,46 @@
+Sub CountExtraSpaces()
+    Dim ws As Worksheet
+    Dim cell As Range
+    Dim extraSpaceCount As Long
+    Dim originalLength As Long
+    Dim trimmedLength As Long
+    Dim outputRow As Long
+    
+    ' Set the worksheet to "Tools"
+    Set ws = ThisWorkbook.Sheets("Tools")
+    
+    ' Initialize the counter for extra spaces
+    extraSpaceCount = 0
+    
+    ' Start output in row 2 of column C (keeping row 1 empty)
+    outputRow = 2
+    
+    ' Loop through each cell in column B
+    For Each cell In ws.Range("B2:B" & ws.Cells(ws.Rows.Count, "B").End(xlUp).Row)
+        If Not IsEmpty(cell.Value) Then
+            ' Get the length of the cell's content
+            originalLength = Len(cell.Value)
+            ' Get the length of the trimmed content
+            trimmedLength = Len(Application.Trim(cell.Value))
+            ' Calculate the extra spaces
+            extraSpaceCount = originalLength - trimmedLength
+        Else
+            ' If the cell is empty, set extra space count to 0
+            extraSpaceCount = 0
+        End If
+        
+        ' Output the extra space count to column C
+        ws.Cells(outputRow, 3).Value = extraSpaceCount
+        
+        ' If extra spaces are found, fill the output cell with light red color
+        If extraSpaceCount > 0 Then
+            ws.Cells(outputRow, 3).Interior.Color = RGB(255, 199, 206) ' Light red color
+        Else
+            ' Clear the color if no extra spaces
+            ws.Cells(outputRow, 3).Interior.ColorIndex = xlNone
+        End If
+        
+        ' Move to the next row in column C
+        outputRow = outputRow + 1
+    Next cell
+End Sub
