@@ -1,17 +1,15 @@
 Sub GroupDataByColumnE()
-    Dim ws As Worksheet
-    Dim outputWs As Worksheet
-    Dim lastRow As Long
-    Dim currentRow As Long
-    Dim outputRow As Long
-    Dim uniqueValues As Object
-    Dim colEValue As Variant ' Declare as Variant for For Each loop
+    Dim ws As Worksheet, outputWs As Worksheet
+    Dim lastRow As Long, currentRow As Long, outputRow As Long
+    Dim uniqueValues As Object, pdmTextDict As Object
+    Dim colEValue As Variant
     Dim colB As String, colC As String, colD As String, colF As String
-    Dim pdmTextDict As Object
     Dim nextRow As Long
+    
     ' Set the source worksheet
-    Set ws = ThisWorkbook.Sheets("Classification Details") ' Change this to your source sheet name
+    Set ws = ThisWorkbook.Sheets("Classification Details") ' Update source sheet name if necessary
     lastRow = ws.Cells(ws.Rows.Count, "E").End(xlUp).Row
+
     ' Create a new worksheet for output
     On Error Resume Next
     Application.DisplayAlerts = False
@@ -19,91 +17,35 @@ Sub GroupDataByColumnE()
     Application.DisplayAlerts = True
     On Error GoTo 0
     Set outputWs = ThisWorkbook.Sheets.Add
-    outputWs.Name = "QC Report" ' Change the sheet name to "QC Report"
+    outputWs.Name = "QC Report"
+
     ' Initialize dictionary for unique values
     Set uniqueValues = CreateObject("Scripting.Dictionary")
     outputRow = 1 ' Start output row
- 
+    
     ' Loop through Column E to identify unique values
-    For currentRow = 2 To lastRow ' Assuming headers are in Row 1
+    For currentRow = 2 To lastRow
         colEValue = ws.Cells(currentRow, "E").Value
         If Not uniqueValues.Exists(colEValue) Then
             uniqueValues.Add colEValue, True
         End If
     Next currentRow
- 
-    ' Loop through unique values to group data
+
+    ' Process each unique value in Column E
     For Each colEValue In uniqueValues.keys
-        ' Add the header for the group
+        ' Add the group header
         outputWs.Cells(outputRow, 1).Value = "PDM Number:"
         outputWs.Cells(outputRow, 2).Value = colEValue
         outputWs.Cells(outputRow, 1).Font.Bold = True
         outputRow = outputRow + 1
-        ' Add Headings values for this group
-        outputWs.Cells(outputRow, 1).Value = "Headings:"
-        outputWs.Cells(outputRow, 1).Font.Bold = True
-        nextRow = outputRow ' Track the row for subsequent values
-        For currentRow = 2 To lastRow
-            If ws.Cells(currentRow, "E").Value = colEValue Then
-                colB = ws.Cells(currentRow, "B").Value
-                If colB <> "" Then
-                    outputWs.Cells(nextRow, 2).Value = colB
-                    nextRow = nextRow + 1
-                End If
-            End If
-        Next currentRow
-        outputRow = nextRow ' Update outputRow to next available row
-        ' Add Assigned Link values for this group
-        outputWs.Cells(outputRow, 1).Value = "Assigned Link:"
-        outputWs.Cells(outputRow, 1).Font.Bold = True
-        nextRow = outputRow ' Track the row for subsequent values
-        For currentRow = 2 To lastRow
-            If ws.Cells(currentRow, "E").Value = colEValue Then
-                colD = ws.Cells(currentRow, "D").Value
-                If colD <> "" Then
-                    outputWs.Cells(nextRow, 2).Value = colD
-                    nextRow = nextRow + 1
-                End If
-            End If
-        Next currentRow
-        outputRow = nextRow ' Update outputRow to next available row
-        ' Add Families values for this group
-        outputWs.Cells(outputRow, 1).Value = "Families:"
-        outputWs.Cells(outputRow, 1).Font.Bold = True
-        nextRow = outputRow ' Track the row for subsequent values
-        For currentRow = 2 To lastRow
-            If ws.Cells(currentRow, "E").Value = colEValue Then
-                colC = ws.Cells(currentRow, "C").Value
-                If colC <> "" Then
-                    outputWs.Cells(nextRow, 2).Value = colC
-                    nextRow = nextRow + 1
-                End If
-            End If
-        Next currentRow
-        outputRow = nextRow ' Update outputRow to next available row
- 
-        ' Add unique PDM TEXT values for this group
-        outputWs.Cells(outputRow, 1).Value = "PDM TEXT:"
-        outputWs.Cells(outputRow, 1).Font.Bold = True
-        nextRow = outputRow ' Track the row for subsequent values
-        ' Initialize the dictionary for PDM TEXT
-        Set pdmTextDict = CreateObject("Scripting.Dictionary")
-        For currentRow = 2 To lastRow
-            If ws.Cells(currentRow, "E").Value = colEValue Then
-                colF = ws.Cells(currentRow, "F").Value
-                If Not IsEmpty(colF) And colF <> "" Then
-                    ' Add unique PDM TEXT values
-                    If Not pdmTextDict.Exists(colF) Then
-                        pdmTextDict.Add colF, True
-                        outputWs.Cells(nextRow, 2).Value = colF
-                        nextRow = nextRow + 1
-                    End If
-                End If
-            End If
-        Next currentRow
-        outputRow = nextRow ' Update outputRow to next available row
- 
-        ' Leave two blank rows between groups with light gray fill
+
+        ' Extract and group data for each column
+        Call WriteGroupedData(ws, outputWs, "Headings:", "B", colEValue, lastRow, outputRow)
+        Call WriteGroupedData(ws, outputWs, "Assigned Link:", "D", colEValue, lastRow, outputRow)
+        Call WriteGroupedData(ws, outputWs, "Families:", "C", colEValue, lastRow, outputRow)
+        Call WriteGroupedDataUnique(ws, outputWs, "PDM TEXT:", "F", colEValue, lastRow, outputRow)
+
+        ' Add a separator row with light gray fill
         outputWs.Cells(outputRow, 1).Value = ""
         outputWs.Cells(outputRow + 1, 1).Value = ""
         With outputWs.Range(outputWs.Cells(outputRow, 1), outputWs.Cells(outputRow + 1, 2))
@@ -112,6 +54,45 @@ Sub GroupDataByColumnE()
         End With
         outputRow = outputRow + 2
     Next colEValue
- 
+
     MsgBox "Data grouping complete. Check the 'QC Report' sheet.", vbInformation
+End Sub
+
+' Helper function to write grouped data
+Private Sub WriteGroupedData(ws As Worksheet, outputWs As Worksheet, header As String, column As String, key As Variant, lastRow As Long, ByRef outputRow As Long)
+    Dim currentRow As Long, value As String, nextRow As Long
+    outputWs.Cells(outputRow, 1).Value = header
+    outputWs.Cells(outputRow, 1).Font.Bold = True
+    nextRow = outputRow + 1
+    For currentRow = 2 To lastRow
+        If ws.Cells(currentRow, "E").Value = key Then
+            value = ws.Cells(currentRow, column).Value
+            If value <> "" Then
+                outputWs.Cells(nextRow, 2).Value = value
+                nextRow = nextRow + 1
+            End If
+        End If
+    Next currentRow
+    outputRow = nextRow
+End Sub
+
+' Helper function to write unique grouped data
+Private Sub WriteGroupedDataUnique(ws As Worksheet, outputWs As Worksheet, header As String, column As String, key As Variant, lastRow As Long, ByRef outputRow As Long)
+    Dim currentRow As Long, value As String, nextRow As Long
+    Dim uniqueDict As Object
+    Set uniqueDict = CreateObject("Scripting.Dictionary")
+    outputWs.Cells(outputRow, 1).Value = header
+    outputWs.Cells(outputRow, 1).Font.Bold = True
+    nextRow = outputRow + 1
+    For currentRow = 2 To lastRow
+        If ws.Cells(currentRow, "E").Value = key Then
+            value = ws.Cells(currentRow, column).Value
+            If value <> "" And Not uniqueDict.Exists(value) Then
+                uniqueDict.Add value, True
+                outputWs.Cells(nextRow, 2).Value = value
+                nextRow = nextRow + 1
+            End If
+        End If
+    Next currentRow
+    outputRow = nextRow
 End Sub
