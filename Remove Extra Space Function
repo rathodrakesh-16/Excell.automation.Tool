@@ -1,0 +1,22 @@
+Sub RemoveExtraSpaces()
+    Dim ws As Worksheet
+    Dim rng As Range
+    Dim cell As Range
+
+    ' Set the worksheet
+    Set ws = ThisWorkbook.Sheets("Tools")
+
+    ' Define the range in column B (assumes data starts from row 1 and ends at the last used row)
+    Set rng = ws.Range("B1:B" & ws.Cells(ws.Rows.Count, "B").End(xlUp).Row)
+
+    ' Loop through each cell in the range
+    For Each cell In rng
+        If Not IsEmpty(cell.Value) Then
+            ' Remove extra spaces using WorksheetFunction.Trim
+            cell.Value = WorksheetFunction.Trim(cell.Value)
+        End If
+    Next cell
+
+    ' Notify user
+    MsgBox "Extra spaces removed from column B!", vbInformation
+End Sub
