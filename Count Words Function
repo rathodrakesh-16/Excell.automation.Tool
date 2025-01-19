@@ -4,48 +4,78 @@ Sub CountWordsInColumnB()
     Dim cell As Range
     Dim wordCount As Long
     Dim i As Long
-    
+    Dim inputColumn As String
+    Dim outputColumn As String
+
+    ' Performance optimization
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+
+    On Error GoTo ErrorHandler ' Start error handling
+
     ' Set reference to the "Tools" sheet
     Set ws = ThisWorkbook.Sheets("Tools")
-    
-    ' Find the last row with data in column B
-    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
-    
-    ' Loop through each cell in column B, starting from row 2 (ignore row 1)
+
+    ' Define input and output columns
+    inputColumn = "B" ' Column for input data
+    outputColumn = "D" ' Column for output data
+
+    ' Find the last row with data in the input column
+    lastRow = ws.Cells(ws.Rows.Count, inputColumn).End(xlUp).Row
+
+    ' Loop through each cell in the input column, starting from row 2
     For i = 2 To lastRow
-        ' Get the cell in column B
-        Set cell = ws.Cells(i, "B")
+        ' Get the cell in the input column
+        Set cell = ws.Cells(i, inputColumn)
         
-        ' Count the words in the cell
-        wordCount = CountWords(cell.Value)
-        
-        ' Display the word count in column D
-        ws.Cells(i, "D").Value = wordCount
-        
-        ' If the word count is less than 20, fill the cell with light red color
-        If wordCount < 20 Then
-            ws.Cells(i, "D").Interior.Color = RGB(255, 199, 206) ' Light Red
+        ' Skip empty cells
+        If Not IsEmpty(cell.Value) Then
+            ' Count the words in the cell
+            wordCount = CountWords(cell.Value)
         Else
-            ws.Cells(i, "D").Interior.ColorIndex = -4142 ' No fill (default)
+            wordCount = 0
+        End If
+        
+        ' Display the word count in the output column
+        ws.Cells(i, outputColumn).Value = wordCount
+
+        ' Apply conditional formatting
+        If wordCount < 20 Then
+            ws.Cells(i, outputColumn).Interior.Color = RGB(255, 199, 206) ' Light Red
+        Else
+            ws.Cells(i, outputColumn).Interior.ColorIndex = -4142 ' No fill (default)
         End If
     Next i
+
+Cleanup:
+    ' Re-enable screen updates and calculations
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "An error occurred: " & Err.Description
+    Resume Cleanup
 End Sub
 
 ' Function to count the number of words in a string
 Function CountWords(text As String) As Long
     Dim words() As String
     Dim wordCount As Long
-    
+
+    ' Handle potential errors with input
+    On Error Resume Next
     ' Split the text into words based on spaces
     words = Split(Application.Trim(text), " ")
-    
-    ' If the cell is not empty, return the word count
+    On Error GoTo 0
+
+    ' If the text is not empty, return the word count
     If Len(text) > 0 Then
         wordCount = UBound(words) + 1
     Else
         wordCount = 0
     End If
-    
+
     ' Return the word count
     CountWords = wordCount
 End Function
