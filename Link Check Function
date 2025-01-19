@@ -3,32 +3,56 @@ Sub CheckHttpLinks()
     Dim i As Long
     Dim url As String
     Dim status As String
-    
-    ' Set the worksheet
-    Set ws = ThisWorkbook.Sheets("Tools")
-    
-    ' Define the last row in column A
     Dim lastRow As Long
+    Dim regex As Object
+
+    ' Set the worksheet
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets("Tools")
+    On Error GoTo 0
+    If ws Is Nothing Then
+        MsgBox "Worksheet 'Tools' not found.", vbCritical
+        Exit Sub
+    End If
+
+    ' Define the last row in column A
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
+    ' Initialize RegExp object
+    Set regex = CreateObject("VBScript.RegExp")
+    With regex
+        .Pattern = "^https?://[\w\-]+(\.[\w\-]+)+.*$"
+        .IgnoreCase = True
+        .Global = False
+    End With
+
     ' Loop through each cell in column A, starting from row 2
     For i = 2 To lastRow
         url = Trim(ws.Cells(i, 1).Value) ' Remove extra spaces
-        
+
         ' Check if the cell is not empty
         If url <> "" Then
-            ' Validate if it's a proper URL format
-            If Left(url, 7) = "http://" Then
-                status = "Found http"
-            ElseIf Left(url, 8) = "https://" Then
-                status = "Secure (https)"
+            ' Validate and classify URL
+            If InStr(LCase(url), "stage.") > 0 Then
+                status = "Stage Link"
+                ws.Cells(i, 3).Interior.Color = RGB(255, 255, 153) ' Light yellow fill
+            ElseIf regex.Test(url) Then
+                If Left(url, 7) = "http://" Then
+                    status = "Found http"
+                    ws.Cells(i, 3).Interior.Color = RGB(255, 204, 204) ' Light red fill
+                ElseIf Left(url, 8) = "https://" Then
+                    status = "Secure (https)"
+                Else
+                    status = "Valid URL"
+                End If
             Else
                 status = "Invalid URL"
+                ws.Cells(i, 3).Font.Color = RGB(255, 0, 0) ' Red text
             End If
         Else
-            status = "No URL"
+            status = "Empty URL"
         End If
-        
+
         ' Output the status in column C
         ws.Cells(i, 3).Value = status
     Next i
