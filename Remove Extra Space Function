@@ -2,12 +2,23 @@ Sub RemoveExtraSpaces()
     Dim ws As Worksheet
     Dim rng As Range
     Dim cell As Range
+    Dim originalData As Variant
+    Dim i As Long, j As Long
+
+    ' Performance optimization
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+
+    On Error GoTo ErrorHandler ' Start error handling
 
     ' Set the worksheet
     Set ws = ThisWorkbook.Sheets("Tools")
 
     ' Define the range in column B (assumes data starts from row 1 and ends at the last used row)
     Set rng = ws.Range("B1:B" & ws.Cells(ws.Rows.Count, "B").End(xlUp).Row)
+
+    ' Backup original data for undo capability
+    originalData = rng.Value
 
     ' Loop through each cell in the range
     For Each cell In rng
@@ -18,5 +29,22 @@ Sub RemoveExtraSpaces()
     Next cell
 
     ' Notify user
-    MsgBox "Extra spaces removed from column B!", vbInformation
+    MsgBox "Extra spaces removed", vbInformation
+
+Cleanup:
+    ' Re-enable screen updates and calculations
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Exit Sub
+
+ErrorHandler:
+    ' Restore original data if an error occurs
+    For i = LBound(originalData, 1) To UBound(originalData, 1)
+        For j = LBound(originalData, 2) To UBound(originalData, 2)
+            rng.Cells(i, j).Value = originalData(i, j)
+        Next j
+    Next i
+    MsgBox "An error occurred: " & Err.Description, vbExclamation
+    Resume Cleanup
 End Sub
+
