@@ -1,11 +1,9 @@
 Sub GroupDataByColumnE()
     Dim ws As Worksheet, outputWs As Worksheet
     Dim lastRow As Long, currentRow As Long, outputRow As Long
-    Dim uniqueValues As Object, pdmTextDict As Object
+    Dim uniqueValues As Object
     Dim colEValue As Variant
-    Dim colB As String, colC As String, colD As String, colF As String
-    Dim nextRow As Long
-    
+
     ' Set the source worksheet
     Set ws = ThisWorkbook.Sheets("Classification Details") ' Update source sheet name if necessary
     lastRow = ws.Cells(ws.Rows.Count, "E").End(xlUp).Row
@@ -45,14 +43,12 @@ Sub GroupDataByColumnE()
         Call WriteGroupedData(ws, outputWs, "Families:", "C", colEValue, lastRow, outputRow)
         Call WriteGroupedDataUnique(ws, outputWs, "PDM TEXT:", "F", colEValue, lastRow, outputRow)
 
-        ' Add a separator row with light gray fill
-        outputWs.Cells(outputRow, 1).Value = ""
-        outputWs.Cells(outputRow + 1, 1).Value = ""
+        ' Add a two-line separator with light gray fill
         With outputWs.Range(outputWs.Cells(outputRow, 1), outputWs.Cells(outputRow + 1, 2))
             .Merge
             .Interior.Color = RGB(211, 211, 211) ' Light gray fill
         End With
-        outputRow = outputRow + 2
+        outputRow = outputRow + 2 ' Advance outputRow by 2 for the gap
     Next colEValue
 
     MsgBox "Data grouping complete. Check the 'QC Report' sheet.", vbInformation
@@ -61,38 +57,66 @@ End Sub
 ' Helper function to write grouped data
 Private Sub WriteGroupedData(ws As Worksheet, outputWs As Worksheet, header As String, column As String, key As Variant, lastRow As Long, ByRef outputRow As Long)
     Dim currentRow As Long, value As String, nextRow As Long
+    Dim firstValueWritten As Boolean
+    firstValueWritten = False
+
+    ' Add header
     outputWs.Cells(outputRow, 1).Value = header
     outputWs.Cells(outputRow, 1).Font.Bold = True
-    nextRow = outputRow + 1
+    nextRow = outputRow ' Initialize next row as the same row as the label
+    
+    ' Loop through rows to extract values
     For currentRow = 2 To lastRow
         If ws.Cells(currentRow, "E").Value = key Then
             value = ws.Cells(currentRow, column).Value
             If value <> "" Then
-                outputWs.Cells(nextRow, 2).Value = value
-                nextRow = nextRow + 1
+                If Not firstValueWritten Then
+                    ' Write the first value in the same row as the label
+                    outputWs.Cells(nextRow, 2).Value = value
+                    firstValueWritten = True
+                Else
+                    ' Write subsequent values in rows below
+                    nextRow = nextRow + 1
+                    outputWs.Cells(nextRow, 2).Value = value
+                End If
             End If
         End If
     Next currentRow
-    outputRow = nextRow
+    outputRow = nextRow + 1 ' Update outputRow for the next section
 End Sub
 
 ' Helper function to write unique grouped data
 Private Sub WriteGroupedDataUnique(ws As Worksheet, outputWs As Worksheet, header As String, column As String, key As Variant, lastRow As Long, ByRef outputRow As Long)
     Dim currentRow As Long, value As String, nextRow As Long
     Dim uniqueDict As Object
+    Dim firstValueWritten As Boolean
+    firstValueWritten = False
+
+    ' Initialize dictionary
     Set uniqueDict = CreateObject("Scripting.Dictionary")
+
+    ' Add header
     outputWs.Cells(outputRow, 1).Value = header
     outputWs.Cells(outputRow, 1).Font.Bold = True
-    nextRow = outputRow + 1
+    nextRow = outputRow ' Initialize next row as the same row as the label
+
+    ' Loop through rows to extract unique values
     For currentRow = 2 To lastRow
         If ws.Cells(currentRow, "E").Value = key Then
             value = ws.Cells(currentRow, column).Value
             If value <> "" And Not uniqueDict.Exists(value) Then
                 uniqueDict.Add value, True
-                outputWs.Cells(nextRow, 2).Value = value
-                nextRow = nextRow + 1
+                If Not firstValueWritten Then
+                    ' Write the first value in the same row as the label
+                    outputWs.Cells(nextRow, 2).Value = value
+                    firstValueWritten = True
+                Else
+                    ' Write subsequent values in rows below
+                    nextRow = nextRow + 1
+                    outputWs.Cells(nextRow, 2).Value = value
+                End If
             End If
         End If
     Next currentRow
-    outputRow = nextRow
+    outputRow = nextRow + 1 ' Update outputRow for the next section
 End Sub
