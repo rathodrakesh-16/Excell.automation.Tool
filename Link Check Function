@@ -28,12 +28,18 @@ Sub CheckHttpLinks()
 
     ' Loop through each cell in column A, starting from row 2
     For i = 2 To lastRow
-        url = Trim(ws.Cells(i, 1).Value) ' Remove extra spaces
+        url = Trim(ws.Cells(i, 1).value) ' Remove extra spaces
 
         ' Check if the cell is not empty
         If url <> "" Then
+            ' Check for multiple occurrences of "https", "http", or "www"
+            If (Len(url) - Len(Replace(LCase(url), "https", "")) > 5) Or _
+               (Len(url) - Len(Replace(LCase(url), "http", "")) > 4) Or _
+               (Len(url) - Len(Replace(LCase(url), "www", "")) > 3) Then
+                status = "Multiple Links"
+                ws.Cells(i, 3).Font.Color = RGB(255, 0, 0) ' Red text
             ' Validate and classify URL
-            If InStr(LCase(url), "stage.") > 0 Then
+            ElseIf InStr(LCase(url), "stage.") > 0 Then
                 status = "Stage Link"
                 ws.Cells(i, 3).Interior.Color = RGB(255, 255, 153) ' Light yellow fill
             ElseIf regex.Test(url) Then
@@ -54,6 +60,7 @@ Sub CheckHttpLinks()
         End If
 
         ' Output the status in column C
-        ws.Cells(i, 3).Value = status
+        ws.Cells(i, 3).value = status
     Next i
 End Sub
+
