@@ -23,7 +23,7 @@ Sub GroupDataByColumnE()
 
     ' Loop through Column E to identify unique values
     For currentRow = 2 To lastRow
-        colEValue = ws.Cells(currentRow, "E").value
+        colEValue = ws.Cells(currentRow, "E").Value
         If Not uniqueValues.Exists(colEValue) Then
             uniqueValues.Add colEValue, True
         End If
@@ -33,25 +33,26 @@ Sub GroupDataByColumnE()
     For Each colEValue In uniqueValues.Keys
         ' Add the group header with gray fill
         With outputWs.Cells(outputRow, 1)
-            .value = "PDM Number:"
+            .Value = "PDM Number"
             .Font.Bold = True
             .Interior.Color = RGB(211, 211, 211) ' Light gray fill
         End With
         With outputWs.Cells(outputRow, 2)
-            .value = colEValue
+            .Value = colEValue
+            .Font.Bold = True ' Make PDM Number value bold
             .Interior.Color = RGB(211, 211, 211) ' Light gray fill
         End With
         outputRow = outputRow + 1
 
         ' Extract and group data for each column
-        Call WriteGroupedData(ws, outputWs, "Headings:", "B", colEValue, lastRow, outputRow)
-        Call WriteGroupedData(ws, outputWs, "Assigned Link:", "D", colEValue, lastRow, outputRow)
-        Call WriteGroupedData(ws, outputWs, "Families:", "C", colEValue, lastRow, outputRow)
-        Call WriteGroupedDataUnique(ws, outputWs, "PDM TEXT:", "F", colEValue, lastRow, outputRow)
+        Call WriteGroupedDataDynamicValues(ws, outputWs, colEValue, lastRow, outputRow, "B", "G")
+        Call WriteGroupedData(ws, outputWs, "Assigned Link", "D", colEValue, lastRow, outputRow)
+        Call WriteGroupedData(ws, outputWs, "Families", "C", colEValue, lastRow, outputRow)
+        Call WriteGroupedDataUnique(ws, outputWs, "PDM TEXT", "F", colEValue, lastRow, outputRow)
 
         ' Add a two-line separator without gray fill
-        outputWs.Cells(outputRow, 1).value = ""
-        outputWs.Cells(outputRow + 1, 1).value = ""
+        outputWs.Cells(outputRow, 1).Value = ""
+        outputWs.Cells(outputRow + 1, 1).Value = ""
         outputRow = outputRow + 2 ' Advance outputRow by 2 for the gap
     Next colEValue
 
@@ -62,30 +63,64 @@ Sub GroupDataByColumnE()
     MsgBox "Export complete. Check the 'QC Report' sheet.", vbInformation
 End Sub
 
+' Helper function to write grouped data with dynamic value labels
+Private Sub WriteGroupedDataDynamicValues(ws As Worksheet, outputWs As Worksheet, key As Variant, lastRow As Long, ByRef outputRow As Long, dataColumn As String, labelColumn As String)
+    Dim currentRow As Long, value As String, label As String, nextRow As Long
+    Dim firstValueWritten As Boolean
+    firstValueWritten = False
+
+    ' Add section header
+    outputWs.Cells(outputRow, 1).Value = "Headings"
+    outputWs.Cells(outputRow, 1).Font.Bold = True
+    nextRow = outputRow ' Initialize next row as the same row as the label
+
+    ' Loop through rows to extract values and dynamic labels
+    For currentRow = 2 To lastRow
+        If ws.Cells(currentRow, "E").Value = key Then
+            value = ws.Cells(currentRow, dataColumn).Value
+            label = ws.Cells(currentRow, labelColumn).Value ' Read the label from column G
+            If value <> "" Then
+                If Not firstValueWritten Then
+                    ' Write the first value with label
+                    outputWs.Cells(nextRow, 2).Value = value
+                    outputWs.Cells(nextRow, 3).Value = label ' Add dynamic label in column C (without brackets)
+                    firstValueWritten = True
+                Else
+                    ' Write subsequent values with labels in rows below
+                    nextRow = nextRow + 1
+                    outputWs.Cells(nextRow, 2).Value = value
+                    outputWs.Cells(nextRow, 3).Value = label ' Add dynamic label in column C (without brackets)
+                End If
+            End If
+        End If
+    Next currentRow
+    outputRow = nextRow + 1 ' Update outputRow for the next section
+End Sub
+
 ' Helper function to write grouped data
 Private Sub WriteGroupedData(ws As Worksheet, outputWs As Worksheet, header As String, column As String, key As Variant, lastRow As Long, ByRef outputRow As Long)
     Dim currentRow As Long, value As String, nextRow As Long
     Dim firstValueWritten As Boolean
     firstValueWritten = False
 
-    ' Add header
-    outputWs.Cells(outputRow, 1).value = header
+    ' Add header without colon
+    outputWs.Cells(outputRow, 1).Value = header
     outputWs.Cells(outputRow, 1).Font.Bold = True
     nextRow = outputRow ' Initialize next row as the same row as the label
 
     ' Loop through rows to extract values
     For currentRow = 2 To lastRow
-        If ws.Cells(currentRow, "E").value = key Then
-            value = ws.Cells(currentRow, column).value
+        If ws.Cells(currentRow, "E").Value = key Then
+            value = ws.Cells(currentRow, column).Value
             If value <> "" Then
                 If Not firstValueWritten Then
                     ' Write the first value in the same row as the label
-                    outputWs.Cells(nextRow, 2).value = value
+                    outputWs.Cells(nextRow, 2).Value = value
                     firstValueWritten = True
                 Else
                     ' Write subsequent values in rows below
                     nextRow = nextRow + 1
-                    outputWs.Cells(nextRow, 2).value = value
+                    outputWs.Cells(nextRow, 2).Value = value
                 End If
             End If
         End If
@@ -103,29 +138,28 @@ Private Sub WriteGroupedDataUnique(ws As Worksheet, outputWs As Worksheet, heade
     ' Initialize dictionary
     Set uniqueDict = CreateObject("Scripting.Dictionary")
 
-    ' Add header
-    outputWs.Cells(outputRow, 1).value = header
+    ' Add header without colon
+    outputWs.Cells(outputRow, 1).Value = header
     outputWs.Cells(outputRow, 1).Font.Bold = True
     nextRow = outputRow ' Initialize next row as the same row as the label
 
     ' Loop through rows to extract unique values
     For currentRow = 2 To lastRow
-        If ws.Cells(currentRow, "E").value = key Then
-            value = ws.Cells(currentRow, column).value
+        If ws.Cells(currentRow, "E").Value = key Then
+            value = ws.Cells(currentRow, column).Value
             If value <> "" And Not uniqueDict.Exists(value) Then
                 uniqueDict.Add value, True
                 If Not firstValueWritten Then
                     ' Write the first value in the same row as the label
-                    outputWs.Cells(nextRow, 2).value = value
+                    outputWs.Cells(nextRow, 2).Value = value
                     firstValueWritten = True
                 Else
                     ' Write subsequent values in rows below
                     nextRow = nextRow + 1
-                    outputWs.Cells(nextRow, 2).value = value
+                    outputWs.Cells(nextRow, 2).Value = value
                 End If
             End If
         End If
     Next currentRow
     outputRow = nextRow + 1 ' Update outputRow for the next section
 End Sub
-
