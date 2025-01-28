@@ -1,0 +1,31 @@
+Sub CheckDuplicatesInColumnD_Tools()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim cell As Range
+    Dim dict As Object
+
+    ' Set the worksheet to "Tools"
+    Set ws = ThisWorkbook.Sheets("Tools")
+    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    ' Clear previous results in Column D
+    ws.Range("D2:D" & lastRow).ClearContents
+
+    ' Loop through Column B and check for duplicates
+    For Each cell In ws.Range("B2:B" & lastRow) ' Adjust range if necessary
+        If Not IsEmpty(cell.value) Then
+            If dict.exists(cell.value) Then
+                ws.Cells(cell.Row, "D").value = "Duplicate of cell " & dict(cell.value)
+            Else
+                dict.Add cell.value, cell.Address(False, False)
+                ws.Cells(cell.Row, "D").value = "Unique"
+            End If
+        Else
+            ws.Cells(cell.Row, "D").value = "Empty"
+        End If
+    Next cell
+
+    ' Clean up
+    Set dict = Nothing
+End Sub
